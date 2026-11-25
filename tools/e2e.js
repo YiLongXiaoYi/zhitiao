@@ -149,14 +149,25 @@ function rmDir(dir) {
 /* ---------------------------------------------------------------- 主流程 */
 (async () => {
   fs.mkdirSync(SHOTS, { recursive: true });
-  const { srv, port } = await startStatic();
-  const BASE = 'http://127.0.0.1:' + port + '/';
+
+  // 传一个网址参数就打线上（比如 https://xxx.github.io/zhitiao/），
+  // 不传就在本地起静态服务。
+  // 无头模式连不上公网上的对端（浏览器在无头时隐藏本地 IP、mDNS 解析受限），
+  // 所以测线上地址必须加 --headed，用真浏览器跑。
+  const headed = process.argv.includes('--headed');
+  const external = (process.argv[2] || '').startsWith('http') ? process.argv[2] : '';
+  let srv = null;
+  let BASE = external;
+  if (!external) {
+    const started = await startStatic();
+    srv = started.srv;
+    BASE = 'http://127.0.0.1:' + started.port + '/';
+  }
   const debugPort = await freePort();
   const userDir = path.join(os.tmpdir(), 'zhitiao-e2e-' + Date.now());
-  console.log('静态服务: ' + BASE + '  调试端口: ' + debugPort);
+  console.log('被测地址: ' + BASE + '  调试端口: ' + debugPort + (headed ? '  [有界面]' : '  [无头]'));
 
-  const edge = spawn(EDGE, [
-    '--headless=new',
+  const edgeArgs = [
     '--disable-gpu',
     '--no-sandbox',
     '--disable-crash-reporter',
@@ -164,7 +175,12 @@ function rmDir(dir) {
     '--user-data-dir=' + userDir,
     '--window-size=1100,780',
     'about:blank',
-  ], { stdio: 'ignore' });
+  ];
+  // 无头时不弹窗，但浏览器默认会把本地 IP 换成 .local 主机名（mDNS），
+  // 无头环境解析不了，P2P 就会一直卡在连接中。关掉它。
+  edgeArgs.push('--disable-features=WebRtcHideLocalIpsWithMdns');
+  if (!headed) edgeArgs.unshift('--headless=new');
+  const edge = spawn(EDGE, edgeArgs, { stdio: 'ignore' });
 
   let cdp;
   try {
@@ -317,7 +333,7 @@ function rmDir(dir) {
   } finally {
     killTree(edge.pid);
     try {
-      srv.close();
+      if (srv) srv.close();
     } catch {}
     await sleep(300);
     rmDir(userDir);
