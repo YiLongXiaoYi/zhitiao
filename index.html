@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f7f2e7" />
+  <title>小纸条 · 两个人，一个房间号</title>
+  <meta name="description" content="不用装软件、不用同一个 WiFi。输入房间号，两台设备就能递纸条。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="desk">
+    <header class="topbar">
+      <div class="brand">
+        <span class="seal">纸</span>
+        <div class="brand-text">
+          <b>小纸条</b>
+          <em>网页版 · 一对一</em>
+        </div>
+      </div>
+      <div class="status" id="statusbar"></div>
+    </header>
+
+    <!-- ① 首页 -->
+    <section class="screen" id="screen-home">
+      <h1>在同一张桌子上说话</h1>
+      <p class="lede">
+        不用装软件，也不用连同一个 WiFi。一个人摆桌拿到房间号，另一个人输进去就行——
+        消息在你们两台设备之间直连，不经过别人的服务器。
+      </p>
+
+      <div class="cards">
+        <article class="card">
+          <h2>摆一张桌子</h2>
+          <p>生成一个 4 位房间号，把号码发给对方。</p>
+          <label>你的称呼
+            <input id="host-name" placeholder="比如：阿哲" maxlength="16" autocomplete="off" />
+          </label>
+          <button class="primary" id="btn-host">摆 一 张 桌 子</button>
+        </article>
+
+        <article class="card">
+          <h2>加入</h2>
+          <form id="form-join">
+            <label>房间号
+              <input id="join-code" placeholder="4 位数字" maxlength="4" inputmode="numeric"
+                     autocomplete="off" spellcheck="false" />
+            </label>
+            <label>你的称呼
+              <input id="join-name" placeholder="比如：小林" maxlength="16" autocomplete="off" />
+            </label>
+            <button class="primary" type="submit">入　座</button>
+          </form>
+        </article>
+      </div>
+
+      <p class="hint" id="home-hint">
+        第一次连要等两三秒（在跟信令服务器打招呼）。如果一直连不上，多半是这个网络禁了 P2P。
+      </p>
+    </section>
+
+    <!-- ② 等待对方 -->
+    <section class="screen" id="screen-waiting" hidden>
+      <h1>桌已摆好，等对方入座</h1>
+      <p class="lede">把这 4 位房间号发给对方（微信、口头都行），他在首页「加入」里填上就能进来。</p>
+
+      <div class="ticket">
+        <div class="ticket-row">
+          <span>房 间 号</span>
+          <b class="code" id="wait-code">----</b>
+        </div>
+        <div class="ticket-row">
+          <span>状 态</span>
+          <b id="wait-status">正在连接服务器…</b>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="ghost" id="btn-copy">复制房间号</button>
+        <button class="ghost" id="btn-cancel">收起桌子</button>
+      </div>
+
+      <details class="trouble">
+        <summary>对方连不上？</summary>
+        <ol>
+          <li><b>房间号对不对？</b>4 位数字，区分不了就别硬猜，让对方重发一次。</li>
+          <li><b>两边都要能上网。</b>这个版本走公网直连，不需要同一个 WiFi，但需要网络。</li>
+          <li><b>公司/学校网络禁 UDP。</b>这种网络里 P2P 打洞会失败。换手机流量试试——
+            切成蜂窝数据往往就通了。</li>
+          <li><b>等 20 秒。</b>打洞最快 2 秒，慢的要十几秒；超时我会告诉你失败。</li>
+        </ol>
+      </details>
+    </section>
+
+    <!-- ③ 对话 -->
+    <section class="screen chat" id="screen-chat" hidden>
+      <div class="messages" id="messages"></div>
+      <div class="typing" id="typing" hidden>对方正在写…</div>
+      <form class="composer" id="form-send">
+        <textarea id="input" rows="1" maxlength="2000"
+          placeholder="写点什么 · Enter 递过去，Shift + Enter 换行"></textarea>
+        <div class="tools">
+          <label class="chip" title="对方展开 10 秒后自动销毁">
+            <input type="checkbox" id="burn" /> 阅后即焚
+          </label>
+          <button class="primary" type="submit" id="btn-send">递过去</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="vendor/peerjs.min.js"></script>
+  <script src="chat-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

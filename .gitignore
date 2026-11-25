@@ -1,0 +1,5 @@
+﻿tools/_profile/
+tools/p/
+tools/shots/
+node_modules/
+*.log
